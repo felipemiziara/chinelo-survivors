@@ -761,6 +761,8 @@ const CHARACTERS = [
     style: 'marsh', skin: '#f1c9a5', hair: '#3b2314', shirt: '#2f7d6d', stripe: '#1f5a4e', pants: '#34384a' },
   { name: 'Dr. Fedô', desc: 'Cientista do fedor: onde passa, fica tóxico.', weapon: ['coco', 'toxico'], bonus: 'Começa com 2 armas', stats: {},
     style: 'hazmat', skin: '#f2c230', hair: '#000', shirt: '#f2c230', stripe: '#2b2b2b', pants: '#2b2b2b' },
+  { name: 'Gamer ADMT', desc: 'Joga de madrugada e nunca deixa um cristal pra trás.', weapon: 'raio', bonus: '+30% de alcance para pegar cristais', stats: { magnet: 0.3 },
+    style: 'gamerboy', skin: '#e3c9a6', hair: '#4a2f1b', shirt: '#23262f', stripe: '#4fd6ff', pants: '#3a4150' },
 ];
 // um personagem pode começar com uma arma ou com várias
 const charWeapons = c => Array.isArray(c.weapon) ? c.weapon : [c.weapon];
@@ -773,7 +775,7 @@ const P = {
   dmg: () => 1 + 0.12 * (passives.forca || 0) + CHS('dmg'),
   cd: () => 1 - 0.08 * (passives.relogio || 0) - CHS('cd'),
   speed: () => 1 + 0.1 * (passives.tenis || 0) + CHS('speed'),
-  magnet: () => 90 * (1 + 0.35 * (passives.ima || 0)),
+  magnet: () => 90 * (1 + 0.35 * (passives.ima || 0) + CHS('magnet')),
   armor: () => (passives.armadura || 0) + CHS('armor'),
   regen: () => 0.4 * (passives.vitamina || 0) + CHS('regen'),
   area: () => 1 + 0.1 * (passives.lupa || 0),
@@ -1750,6 +1752,16 @@ function drawBoneco(g, L, o) {
     g.fillStyle = L.shirt; g.beginPath(); g.moveTo(-8, -8); g.lineTo(8, -8); g.lineTo(12, 12); g.lineTo(-12, 12); g.closePath(); g.fill(); g.stroke();
     g.fillStyle = L.stripe;
     for (const [px, py] of [[-5, 2], [4, 6], [0, -3], [-7, 9], [7, 10]]) { g.beginPath(); g.arc(px, py, 1.3, 0, TAU); g.fill(); }
+  } else if (L.style === 'gamerboy') { // moletom escrito ADMT
+    g.fillStyle = L.pants; rrect(g, -9, 4, 18, 7, 2); g.fill(); g.stroke();
+    g.fillStyle = L.shirt; rrect(g, -10, -9, 20, 17, 5); g.fill(); g.stroke();
+    g.strokeStyle = 'rgba(255,255,255,.3)'; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(-5, 7); g.lineTo(-4, 3.5); g.lineTo(5, 3.5); g.lineTo(6, 7); g.stroke(); // bolso
+    g.strokeStyle = '#000'; g.lineWidth = 2;
+    g.save(); g.scale(o.face, 1); // texto sempre de frente, mesmo virado pro outro lado
+    g.fillStyle = L.stripe; g.font = 'bold 5.5px "Trebuchet MS",sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('ADMT', 0, -2);
+    g.restore();
   } else if (L.style === 'hazmat') { // roupa de proteção
     g.fillStyle = L.shirt; rrect(g, -10, -9, 20, 21, 5); g.fill(); g.stroke();
     g.fillStyle = '#2b2b2b'; g.fillRect(-9.5, 5, 19, 3); // cinto
@@ -1804,6 +1816,10 @@ function drawBoneco(g, L, o) {
   } else if (L.style === 'vovo') {
     g.beginPath(); g.arc(-1, -18, 10.5, Math.PI * 0.9, Math.PI * 2); g.fill();
     g.beginPath(); g.arc(-9, -23, 5, 0, TAU); g.fill(); g.stroke(); // coque
+  } else if (L.style === 'gamerboy') { // cabelo longo
+    g.beginPath(); g.arc(-1, -18, 10.5, Math.PI * 0.8, Math.PI * 1.95); g.fill();
+    rrect(g, -12, -21, 8, 19, 4); g.fill(); // cabelo longo caindo até o ombro
+    g.beginPath(); g.moveTo(2, -27); g.lineTo(10, -20); g.lineTo(3, -22); g.closePath(); g.fill(); // franja
   } else if (L.style === 'gamer') {
     g.beginPath(); g.arc(-1, -18, 10.5, Math.PI * 0.85, Math.PI * 1.95); g.fill();
     g.beginPath(); g.moveTo(1, -27); g.lineTo(10, -19); g.lineTo(1, -21); g.closePath(); g.fill(); // franja
@@ -1831,7 +1847,7 @@ function drawBoneco(g, L, o) {
     for (const [cx, cy, r] of [[-4, -31, 5], [4, -31, 5], [0, -34, 5.5]]) { g.beginPath(); g.arc(cx, cy, r, 0, TAU); g.fill(); g.stroke(); }
     rrect(g, -8, -29, 16, 6, 2); g.fill(); g.stroke();
   }
-  if (L.style === 'gamer') { // fone de ouvido com microfone
+  if (L.style === 'gamer' || L.style === 'gamerboy') { // fone de ouvido com microfone
     g.strokeStyle = '#222'; g.lineWidth = 3; g.beginPath(); g.arc(0, -16, 11.5, Math.PI * 1.1, Math.PI * 1.9); g.stroke();
     g.fillStyle = '#4fd6ff'; g.lineWidth = 2; g.strokeStyle = '#000'; rrect(g, -5, -20, 6, 9, 2); g.fill(); g.stroke();
     g.strokeStyle = '#222'; g.beginPath(); g.moveTo(0, -12); g.quadraticCurveTo(4, -8, 8, -10); g.stroke(); g.strokeStyle = '#000';
