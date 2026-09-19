@@ -749,7 +749,7 @@ const PASSIVES = {
   armadura: { name: 'Armadura',    icon: '🛡️', max: 5, desc: '-1 de dano recebido' },
   vitamina: { name: 'Vitamina',    icon: '🍊', max: 5, desc: 'Recupera +0,4 de vida por segundo' },
   coracao:  { name: 'Coração',     icon: '❤️', max: 5, desc: '+20 de vida máxima' },
-  despertador: { name: 'Despertador Quebrado', icon: '⏰', max: 1, desc: 'Para o tempo por 1 minuto; depois espera 1 minuto e para de novo' },
+  despertador: { name: 'Despertador Quebrado', icon: '⏰', max: 1, desc: 'Para o tempo por 45 segundos; depois espera 1 minuto e para de novo' },
   lupa:     { name: 'Lupa',        icon: '🔍', max: 5, desc: '+10% de área das armas' },
 };
 // ================= PERSONAGENS =================
@@ -1033,9 +1033,9 @@ function updateDespertador(dt) {
     desp.cd -= dt;
     if (desp.cd <= 0) {
       if (!tempoParado()) freezeAt = time;
-      desp.on = 60;
+      desp.on = 45;
       sfx('tempoPara'); shake(0.3, 5);
-      banner('⏰ O TEMPO PAROU POR 1 MINUTO! ⏰');
+      banner('⏰ O TEMPO PAROU POR 45 SEGUNDOS! ⏰');
     }
   }
 }
