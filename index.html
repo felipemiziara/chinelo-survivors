@@ -521,10 +521,11 @@ const WEAPONS = {
         const dx = tx - p.x, dy = ty - p.y, d = Math.hypot(dx, dy) || 1;
         if (d > 6) { p.x += dx / d * sp * dt; p.y += dy / d * sp * dt; p.ang = Math.atan2(dy, dx); p.run = (p.run || 0) + sp * dt * 0.12; }
         p.wag += dt * 14; p.bite -= dt;
-        if (p.bite <= 0) queryEnemies(p.x, p.y, 16, e => {
+        const alcance = i >= 5 ? 32 : 16; // Pit Bull é 2x maior, morde mais longe
+        if (p.bite <= 0) queryEnemies(p.x, p.y, alcance, e => {
           if (p.bite > 0) return;
           const ex = e.x - p.x, ey = e.y - p.y;
-          if (ex * ex + ey * ey > (e.r + 16) ** 2) return;
+          if (ex * ex + ey * ey > (e.r + alcance) ** 2) return;
           const dd = Math.hypot(ex, ey) || 1;
           p.bite = 0.35; hitEnemy(e, this.dmg[i], ex / dd * 220, ey / dd * 220); sfx(i >= 5 ? 'rosnado' : 'au');
         });
@@ -1616,8 +1617,8 @@ function drawPitBull(p) {
   const face = Math.cos(p.ang) >= 0 ? 1 : -1, run = p.run || 0, bob = Math.abs(Math.cos(run)) * 1.2;
   const COR = '#7f8896', ESC = '#5d6573', CLA = '#a9b1be', BOR = '#23272e', BRANCO = '#f2f2f2';
   ctx.fillStyle = 'rgba(0,0,0,.3)';
-  ctx.beginPath(); ctx.ellipse(p.x + face * 3, p.y + 11, 22, 6, 0, 0, TAU); ctx.fill();
-  ctx.save(); ctx.translate(p.x, p.y); ctx.scale(face * 0.85, 0.85);
+  ctx.beginPath(); ctx.ellipse(p.x + face * 6, p.y + 22, 44, 12, 0, 0, TAU); ctx.fill();
+  ctx.save(); ctx.translate(p.x, p.y); ctx.scale(face * 1.7, 1.7); // Pit Bull 2x maior
   ctx.lineJoin = 'round'; ctx.lineCap = 'round';
   const perna = (x, fase, cor) => {
     const o = Math.sin(run + fase) * 3;
