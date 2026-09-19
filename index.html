@@ -751,6 +751,7 @@ const PASSIVES = {
   armadura: { name: 'Armadura',    icon: '🛡️', max: 5, desc: '-1 de dano recebido' },
   vitamina: { name: 'Vitamina',    icon: '🍊', max: 5, desc: 'Recupera +0,4 de vida por segundo' },
   coracao:  { name: 'Coração',     icon: '❤️', max: 5, desc: '+20 de vida máxima' },
+  despertador: { name: 'Despertador Quebrado', icon: '⏰', max: 1, desc: 'Para o tempo por 1 minuto; depois espera 1 minuto e para de novo' },
   // só aparece nas cartas com Nuvem de Talco nível 6 e Vitamina nível 5
   ampulheta: { name: 'Ampulheta do Tempo', icon: '⏳', max: 15, req: true,
     dano: AMP_DANO,
@@ -865,7 +866,10 @@ const GAFA_TIME = 20 * 60;
 const MAE_TIME = 25 * 60;
 let state = 'menu';
 let testMode = false;
-let amp = { on: 0, cd: 0, stopAt: 0 }; // Ampulheta do Tempo
+let amp = { on: 0, cd: 0 }; // Ampulheta do Tempo
+let desp = { on: 0, cd: 0 }; // Despertador Quebrado
+let freezeAt = 0; // momento em que o tempo parou (para congelar as animações)
+const tempoParado = () => amp.on > 0 || desp.on > 0;
 let player, enemies, projectiles, gems, pickups, particles, texts, effects;
 let time, kills, spawnTimer, nextBoss, nextHorde, bossCount, idc, won, weapons, passives, wstate, barata, victoryAt, gafa, gafaSpawned, victoryName, mae, maeSpawned;
 let shakeT = 0, shakeMag = 0, menuT = 0, menuCh = [];
@@ -877,7 +881,7 @@ function reset() {
   time = 0; kills = 0; spawnTimer = 0.5; nextBoss = 150; nextHorde = 60; bossCount = 0; idc = 0; won = false; barata = null; victoryAt = 0;
   gafa = null; gafaSpawned = false; victoryName = 'A BARATA GIGANTE';
   mae = null; maeSpawned = false;
-  amp = { on: 0, cd: 0, stopAt: 0 };
+  amp = { on: 0, cd: 0 }; desp = { on: 0, cd: 0 };
   weapons = {}; for (const k of charWeapons(CH())) weapons[k] = 1;
   passives = {}; wstate = {};
 }
@@ -967,7 +971,7 @@ function activeBoss() {
 }
 function director(dt) {
   if (victoryAt) { if (time >= victoryAt) { victoryAt = 0; endGame(true); } return; }
-  if (amp.on > 0) return; // tempo parado: nada novo aparece
+  if (tempoParado()) return; // tempo parado: nada novo aparece
   if (testMode && !testCfg.spawn) return; // teste sem chinelos automáticos
   const m = time / 60;
   spawnTimer -= dt;
@@ -1033,14 +1037,30 @@ function updateAmpulheta(dt) {
   if (!lv) return;
   if (amp.on > 0) {
     amp.on -= dt;
-    if (amp.on <= 0) { amp.on = 0; amp.cd = 60; sfx('tempoVolta'); banner('⏳ O tempo voltou a andar!'); }
+    if (amp.on <= 0) { amp.on = 0; amp.cd = 60; if (!tempoParado()) { sfx('tempoVolta'); banner('⏳ O tempo voltou a andar!'); } }
   } else {
     amp.cd -= dt;
     if (amp.cd <= 0) ativarAmpulheta(lv);
   }
 }
+function updateDespertador(dt) {
+  if (!passives.despertador) return;
+  if (desp.on > 0) {
+    desp.on -= dt;
+    if (desp.on <= 0) { desp.on = 0; desp.cd = 60; if (!tempoParado()) { sfx('tempoVolta'); banner('⏰ O tempo voltou a andar!'); } }
+  } else {
+    desp.cd -= dt;
+    if (desp.cd <= 0) {
+      if (!tempoParado()) freezeAt = time;
+      desp.on = 60;
+      sfx('tempoPara'); shake(0.3, 5);
+      banner('⏰ O TEMPO PAROU POR 1 MINUTO! ⏰');
+    }
+  }
+}
 function ativarAmpulheta(lv) {
-  amp.on = 20; amp.stopAt = time;
+  if (!tempoParado()) freezeAt = time;
+  amp.on = 20;
   sfx('tempoPara'); shake(0.3, 5);
   banner('⏳ O TEMPO PAROU! ⏳');
   const dano = PASSIVES.ampulheta.dano[lv - 1];
@@ -1114,7 +1134,7 @@ function hitEnemy(e, dmg, kx, ky) {
   if (e.dead) return;
   dmg = Math.max(1, Math.round(dmg * P.dmg() * rand(0.9, 1.1)));
   e.hp -= dmg; e.flash = 0.1;
-  if (!e.boss && !(amp.on > 0)) { e.kx += kx; e.ky += ky; }
+  if (!e.boss && !tempoParado()) { e.kx += kx; e.ky += ky; }
   addText(e.x, e.y - e.r, dmg);
   if (e.hp <= 0) killEnemy(e);
 }
@@ -1365,7 +1385,8 @@ function update(dt) {
   if (state !== 'play') return;
   buildGrid();
   updateAmpulheta(dt);
-  if (amp.on > 0) { for (const e of enemies) e.flash -= dt; } // tempo parado: inimigos congelados
+  updateDespertador(dt);
+  if (tempoParado()) { for (const e of enemies) e.flash -= dt; } // tempo parado: inimigos congelados
   else updateEnemies(dt);
   if (state !== 'play') return;
   for (const k in weapons) {
@@ -2045,7 +2066,7 @@ function render() {
     ctx.drawImage(S.img, p.x - S.w / 2, p.y - S.h / 2 + b, S.w, S.h);
   }
   const realTime = time;
-  if (amp.on > 0) time = amp.stopAt; // animação dos inimigos congelada
+  if (tempoParado()) time = freezeAt; // animação dos inimigos congelada
   for (const e of enemies) {
     if (!vis(e.x, e.y) && !e.boss) continue;
     if (e.T.barata) { drawBarata(e); continue; }
@@ -2059,7 +2080,7 @@ function render() {
     }
   }
   time = realTime;
-  if (amp.on > 0) { // mundo acinzentado enquanto o tempo está parado
+  if (tempoParado()) { // mundo acinzentado enquanto o tempo está parado
     ctx.fillStyle = 'rgba(90,110,160,.3)';
     ctx.fillRect(player.x - W / 2 - 120, player.y - H / 2 - 120, W + 240, H + 240);
   }
@@ -2208,10 +2229,13 @@ let hudCache = '';
 function updateHUD() {
   if (state === 'menu' || state === 'testsetup' || state === 'charmenu') return;
   const ah = $('amphud');
-  if (passives.ampulheta) {
+  if (passives.ampulheta || passives.despertador) {
+    const partes = [];
+    if (passives.ampulheta) partes.push(amp.on > 0 ? '⏳ TEMPO PARADO: ' + Math.ceil(amp.on) + 's' : '⏳ Para o tempo em ' + Math.ceil(Math.max(0, amp.cd)) + 's');
+    if (passives.despertador) partes.push(desp.on > 0 ? '⏰ TEMPO PARADO: ' + Math.ceil(desp.on) + 's' : '⏰ Para o tempo em ' + Math.ceil(Math.max(0, desp.cd)) + 's');
     ah.style.display = 'block';
-    ah.textContent = amp.on > 0 ? '⏳ TEMPO PARADO: ' + Math.ceil(amp.on) + 's' : '⏳ Para o tempo em ' + Math.ceil(Math.max(0, amp.cd)) + 's';
-    ah.style.color = amp.on > 0 ? '#9fd0ff' : '#fff';
+    ah.textContent = partes.join('   ');
+    ah.style.color = tempoParado() ? '#9fd0ff' : '#fff';
   } else if (ah.style.display !== 'none') ah.style.display = 'none';
   const bb = $('bossbar'), bs = activeBoss() || (mae && !mae.dead ? mae : null);
   if (bs) {
