@@ -519,7 +519,7 @@ const WEAPONS = {
         const longe = Math.hypot(p.x - player.x, p.y - player.y) > 270;
         const tx = (longe || !tgt) ? player.x : tgt.x, ty = (longe || !tgt) ? player.y : tgt.y;
         const dx = tx - p.x, dy = ty - p.y, d = Math.hypot(dx, dy) || 1;
-        if (d > 6) { p.x += dx / d * sp * dt; p.y += dy / d * sp * dt; p.ang = Math.atan2(dy, dx); }
+        if (d > 6) { p.x += dx / d * sp * dt; p.y += dy / d * sp * dt; p.ang = Math.atan2(dy, dx); p.run = (p.run || 0) + sp * dt * 0.12; }
         p.wag += dt * 14; p.bite -= dt;
         if (p.bite <= 0) queryEnemies(p.x, p.y, 16, e => {
           if (p.bite > 0) return;
@@ -1588,46 +1588,100 @@ function drawFutebol() {
 function drawCachorro() {
   const s = wstate.cachorro; if (!weapons.cachorro || !s || !s.pets) return;
   const pit = weapons.cachorro >= 6; // no nível 6 o caramelo vira Pit Bull
-  const C = pit ? { corpo: '#8a8f99', pata: '#6b7079', cabeca: '#9aa0aa', borda: '#3e424a', orelha: '#6b7079' }
-                : { corpo: '#c9873a', pata: '#a9682a', cabeca: '#d89a4e', borda: '#7a4a16', orelha: '#a9682a' };
   for (const p of s.pets) {
+    if (pit) { drawPitBull(p); continue; }
     ctx.fillStyle = 'rgba(0,0,0,.3)';
-    ctx.beginPath(); ctx.ellipse(p.x, p.y + 9, pit ? 16 : 12, pit ? 6.5 : 5, 0, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(p.x, p.y + 9, 12, 5, 0, 0, TAU); ctx.fill();
     ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.ang + Math.PI / 2);
-    if (pit) ctx.scale(1.25, 1.25);
-    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    ctx.beginPath(); ctx.moveTo(0, 13); ctx.quadraticCurveTo(Math.sin(p.wag) * 10, 20, Math.sin(p.wag) * (pit ? 9 : 15), pit ? 22 : 26);
-    ctx.lineWidth = 4; ctx.strokeStyle = C.corpo; ctx.stroke(); // rabo
-    ctx.fillStyle = C.pata;
+    ctx.lineWidth = 2; ctx.strokeStyle = '#7a4a16'; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(0, 13); ctx.quadraticCurveTo(Math.sin(p.wag) * 10, 20, Math.sin(p.wag) * 15, 26);
+    ctx.lineWidth = 4; ctx.strokeStyle = '#c9873a'; ctx.stroke();
+    ctx.fillStyle = '#a9682a';
     for (const sd of [-1, 1]) { ctx.beginPath(); ctx.ellipse(sd * 9, 6, 3.5, 5, 0, 0, TAU); ctx.fill(); }
-    ctx.fillStyle = C.corpo; ctx.beginPath(); ctx.ellipse(0, 4, pit ? 12 : 10, 15, 0, 0, TAU); ctx.fill();
-    ctx.lineWidth = 2; ctx.strokeStyle = C.borda; ctx.stroke();
-    if (pit) { ctx.fillStyle = '#ececec'; ctx.beginPath(); ctx.ellipse(0, 1, 5, 6, 0, 0, TAU); ctx.fill(); } // peito branco
-    ctx.fillStyle = C.orelha;
+    ctx.fillStyle = '#c9873a'; ctx.beginPath(); ctx.ellipse(0, 4, 10, 15, 0, 0, TAU); ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = '#7a4a16'; ctx.stroke();
+    ctx.fillStyle = '#a9682a';
     for (const sd of [-1, 1]) {
-      ctx.beginPath();
-      if (pit) { ctx.moveTo(sd * 5, -19); ctx.lineTo(sd * 11, -23); ctx.lineTo(sd * 9.5, -15); ctx.closePath(); }
-      else ctx.ellipse(sd * 7, -16, 3.5, 6.5, sd * 0.5, 0, TAU);
-      ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(sd * 7, -16, 3.5, 6.5, sd * 0.5, 0, TAU); ctx.fill(); ctx.stroke();
     }
-    ctx.fillStyle = C.cabeca; ctx.beginPath();
-    if (pit) ctx.ellipse(0, -13, 10.5, 9, 0, 0, TAU); else ctx.arc(0, -12, 8.5, 0, TAU);
-    ctx.fill(); ctx.stroke();
-    if (pit) {
-      ctx.fillStyle = '#b8bdc6'; ctx.beginPath(); ctx.ellipse(0, -19, 6, 4, 0, 0, TAU); ctx.fill(); ctx.stroke(); // focinho largo
-      ctx.fillStyle = '#c0392b'; ctx.fillRect(-9, -5, 18, 3.5); ctx.strokeRect(-9, -5, 18, 3.5); // coleira
-      ctx.fillStyle = '#e8e8e8';
-      for (const sx of [-6, 0, 6]) { ctx.beginPath(); ctx.moveTo(sx - 1.8, -1.5); ctx.lineTo(sx, 2); ctx.lineTo(sx + 1.8, -1.5); ctx.closePath(); ctx.fill(); } // espinhos
-    }
-    ctx.fillStyle = '#3a2410'; ctx.beginPath(); ctx.ellipse(0, pit ? -21.5 : -19, 3.6, 3, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#d89a4e'; ctx.beginPath(); ctx.arc(0, -12, 8.5, 0, TAU); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#3a2410'; ctx.beginPath(); ctx.ellipse(0, -19, 3.6, 3, 0, 0, TAU); ctx.fill();
     ctx.fillStyle = '#2a1a08';
     ctx.beginPath(); ctx.arc(-3.6, -14, 1.4, 0, TAU); ctx.arc(3.6, -14, 1.4, 0, TAU); ctx.fill();
-    if (pit) { // sobrancelhas bravas
-      ctx.strokeStyle = '#000'; ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.moveTo(-6.5, -17.5); ctx.lineTo(-2, -15.8); ctx.moveTo(6.5, -17.5); ctx.lineTo(2, -15.8); ctx.stroke();
-    }
     ctx.restore();
   }
+}
+// Pit Bull visto de lado: musculoso, patas andando, coleira de espinhos e boca abrindo quando morde
+function drawPitBull(p) {
+  const face = Math.cos(p.ang) >= 0 ? 1 : -1, run = p.run || 0, bob = Math.abs(Math.cos(run)) * 1.2;
+  const COR = '#7f8896', ESC = '#5d6573', CLA = '#a9b1be', BOR = '#23272e', BRANCO = '#f2f2f2';
+  ctx.fillStyle = 'rgba(0,0,0,.3)';
+  ctx.beginPath(); ctx.ellipse(p.x + face * 3, p.y + 11, 22, 6, 0, 0, TAU); ctx.fill();
+  ctx.save(); ctx.translate(p.x, p.y); ctx.scale(face * 0.85, 0.85);
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  const perna = (x, fase, cor) => {
+    const o = Math.sin(run + fase) * 3;
+    ctx.fillStyle = cor; ctx.strokeStyle = BOR; ctx.lineWidth = 2;
+    rrect(ctx, x - 2.8 + o * 0.4, 1, 5.6, 12, 2.5); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = BRANCO; ctx.beginPath(); ctx.ellipse(x + 1 + o * 0.4, 13.5, 3.8, 2.2, 0, 0, TAU); ctx.fill(); ctx.stroke();
+  };
+  perna(-9, Math.PI, ESC); perna(11, 0, ESC); // pernas do lado de lá
+  ctx.strokeStyle = BOR; ctx.lineWidth = 5; // rabo curtinho
+  ctx.beginPath(); ctx.moveTo(-15, -6); ctx.quadraticCurveTo(-21, -9 + Math.sin(p.wag) * 2, -24, -14 + Math.sin(p.wag) * 3); ctx.stroke();
+  ctx.strokeStyle = COR; ctx.lineWidth = 3; ctx.stroke();
+  ctx.translate(0, -bob);
+  // corpo musculoso: peito largo, barriga e quadril juntos numa forma só
+  ctx.beginPath();
+  ctx.moveTo(16, -3); ctx.ellipse(0, -3, 16, 9, 0, 0, TAU);
+  ctx.moveTo(17.5, -4); ctx.ellipse(9, -4, 8.5, 9.5, 0, 0, TAU);
+  ctx.moveTo(-2.5, -3); ctx.ellipse(-10, -3, 7.5, 8.5, 0, 0, TAU);
+  ctx.strokeStyle = BOR; ctx.lineWidth = 4; ctx.stroke(); ctx.fillStyle = COR; ctx.fill();
+  ctx.fillStyle = CLA; ctx.globalAlpha = 0.65; // brilho dos músculos
+  ctx.beginPath(); ctx.ellipse(9, -8.5, 5, 3, -0.3, 0, TAU); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(-10, -7.5, 4.5, 2.8, 0.3, 0, TAU); ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = BRANCO; ctx.beginPath(); ctx.ellipse(13.5, 0, 4, 6.5, -0.3, 0, TAU); ctx.fill(); // peito branco
+  ctx.translate(0, bob);
+  perna(-11, 0, COR); perna(9, Math.PI, COR); // pernas do lado de cá
+  ctx.translate(0, -bob);
+  // coleira vermelha de espinhos
+  ctx.strokeStyle = BOR; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(13, -16); ctx.lineTo(16.5, -3); ctx.stroke();
+  ctx.strokeStyle = '#d63031'; ctx.lineWidth = 3.5; ctx.stroke();
+  ctx.fillStyle = '#dfe6e9'; ctx.strokeStyle = BOR; ctx.lineWidth = 1;
+  for (const t of [0.15, 0.5, 0.85]) {
+    const cx = 13 + 3.5 * t, cy = -16 + 13 * t;
+    ctx.beginPath(); ctx.moveTo(cx - 1, cy - 1.2); ctx.lineTo(cx - 5, cy + 0.3); ctx.lineTo(cx - 0.8, cy + 1.8); ctx.closePath(); ctx.fill(); ctx.stroke();
+  }
+  // cabeça larga: crânio, bochecha e focinho quadradão
+  ctx.beginPath();
+  ctx.moveTo(28.5, -14); ctx.ellipse(20, -14, 8.5, 7.5, 0, 0, TAU);
+  ctx.moveTo(29, -9); ctx.ellipse(21, -9, 8, 5.5, 0, 0, TAU);
+  ctx.moveTo(23, -16.5); ctx.lineTo(30, -16.5); ctx.quadraticCurveTo(33.5, -16.5, 33.5, -12.8);
+  ctx.quadraticCurveTo(33.5, -9, 30, -9); ctx.lineTo(23, -9); ctx.closePath();
+  ctx.strokeStyle = BOR; ctx.lineWidth = 4; ctx.stroke(); ctx.fillStyle = COR; ctx.fill();
+  ctx.fillStyle = ESC; ctx.globalAlpha = 0.6; ctx.beginPath(); ctx.ellipse(18.5, -19, 6, 2.5, 0, 0, TAU); ctx.fill(); ctx.globalAlpha = 1;
+  ctx.fillStyle = BRANCO; // mancha branca na cara
+  ctx.beginPath(); ctx.ellipse(21.5, -18.5, 1.6, 3.8, -0.6, 0, TAU); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(26.5, -15, 6, 2, 0.08, 0, TAU); ctx.fill();
+  ctx.fillStyle = CLA; ctx.beginPath(); ctx.ellipse(29.5, -12, 3.8, 2.8, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#1b1b1b'; ctx.beginPath(); ctx.ellipse(32.6, -14, 2.4, 1.9, 0, 0, TAU); ctx.fill(); // nariz
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(32, -14.6, 0.6, 0, TAU); ctx.fill();
+  if (p.bite > 0.15) { // mordendo: boca aberta com dentes
+    ctx.fillStyle = '#7a1010'; ctx.strokeStyle = BOR; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(23.5, -10); ctx.lineTo(33.5, -10.5); ctx.lineTo(31.5, -4.5); ctx.lineTo(25, -6.5); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#fff';
+    for (const tx of [27, 30.5]) { ctx.beginPath(); ctx.moveTo(tx - 1.2, -10.3); ctx.lineTo(tx, -8); ctx.lineTo(tx + 1.2, -10.4); ctx.closePath(); ctx.fill(); }
+    ctx.beginPath(); ctx.moveTo(27.5, -5.8); ctx.lineTo(28.5, -8); ctx.lineTo(29.6, -5.5); ctx.closePath(); ctx.fill();
+  } else {
+    ctx.strokeStyle = BOR; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(32.5, -9.8); ctx.quadraticCurveTo(28, -7.5, 24, -9.5); ctx.stroke();
+  }
+  ctx.fillStyle = '#1b1b1b'; ctx.beginPath(); ctx.arc(22.8, -16.3, 1.6, 0, TAU); ctx.fill(); // olho
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(23.3, -16.8, 0.55, 0, TAU); ctx.fill();
+  ctx.strokeStyle = BOR; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(19.8, -19.8); ctx.lineTo(25, -18); ctx.stroke(); // sobrancelha brava
+  ctx.fillStyle = ESC; ctx.lineWidth = 1.6; // orelha dobrada
+  ctx.beginPath(); ctx.moveTo(13.5, -18.5); ctx.lineTo(15.5, -24.5); ctx.lineTo(20.5, -21); ctx.lineTo(17.5, -19); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.restore();
 }
 function drawOnda(fx) {
   const p = fx.t / 0.5;
