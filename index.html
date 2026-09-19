@@ -507,8 +507,8 @@ const WEAPONS = {
   },
   cachorro: {
     name: 'Cachorro Caramelo', icon: '🐶', max: 6,
-    desc: ['Um cachorro que corre e morde os chinelos', '+6 de dano e corre mais rápido', '+1 cachorro', '+8 de dano', '+1 cachorro', 'Matilha rápida e furiosa'],
-    dmg: [14, 20, 20, 28, 28, 40], count: [1, 1, 2, 2, 3, 3], speed: [210, 240, 240, 265, 275, 310],
+    desc: ['Um cachorro que corre e morde os chinelos', '+6 de dano e corre mais rápido', '+1 cachorro', '+8 de dano', '+1 cachorro', 'Viram PIT BULLS: mordida 5 vezes mais forte (200 de dano)'],
+    dmg: [14, 20, 20, 28, 28, 200], count: [1, 1, 2, 2, 3, 3], speed: [210, 240, 240, 265, 275, 310],
     update(s, i, dt) {
       s.pets = s.pets || [];
       while (s.pets.length < this.count[i]) s.pets.push({ x: player.x + rand(-30, 30), y: player.y + rand(-30, 30), ang: 0, bite: 0, wag: rand(0, TAU) });
@@ -526,7 +526,7 @@ const WEAPONS = {
           const ex = e.x - p.x, ey = e.y - p.y;
           if (ex * ex + ey * ey > (e.r + 16) ** 2) return;
           const dd = Math.hypot(ex, ey) || 1;
-          p.bite = 0.35; hitEnemy(e, this.dmg[i], ex / dd * 220, ey / dd * 220); sfx('au');
+          p.bite = 0.35; hitEnemy(e, this.dmg[i], ex / dd * 220, ey / dd * 220); sfx(i >= 5 ? 'rosnado' : 'au');
         });
       }
     }
@@ -819,7 +819,7 @@ function noise(dur, vol, freq, type) {
   g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   s.connect(f); f.connect(g); g.connect(master); s.start(t); s.stop(t + dur);
 }
-const SFX_GAP = { soco: 0.1, sabre: 0.12, pew: 0.12, au: 0.3, vass: 0.35, agua: 0.3, exp: 0.08, plaft: 0.06, gem: 0.04, hurt: 0.1, zap: 0.1, shoot: 0.08, thunder: 0.15 };
+const SFX_GAP = { rosnado: 0.3, soco: 0.1, sabre: 0.12, pew: 0.12, au: 0.3, vass: 0.35, agua: 0.3, exp: 0.08, plaft: 0.06, gem: 0.04, hurt: 0.1, zap: 0.1, shoot: 0.08, thunder: 0.15 };
 function sfx(name) {
   if (muted || !AC) return;
   const now = AC.currentTime;
@@ -835,6 +835,7 @@ function sfx(name) {
     case 'pick': tone('sine', 600, 1200, 0.15, 0.1); break;
     case 'level': [523, 659, 784, 1046].forEach((f, i) => tone('square', f, f, 0.12, 0.05, i * 0.08)); break;
     case 'boss': tone('sawtooth', 110, 55, 0.9, 0.15); noise(0.6, 0.2, 200, 'lowpass'); break;
+    case 'rosnado': tone('sawtooth', 150, 80, 0.2, 0.09); noise(0.15, 0.12, 300, 'lowpass'); break;
     case 'soco': noise(0.1, 0.25, 1500, 'bandpass'); tone('square', 300, 120, 0.1, 0.05); break;
     case 'splat': noise(0.18, 0.28, 500, 'lowpass'); tone('sine', 180, 60, 0.18, 0.08); break;
     case 'sabreLiga': tone('sawtooth', 90, 160, 0.4, 0.07); break;
@@ -1586,25 +1587,45 @@ function drawFutebol() {
 }
 function drawCachorro() {
   const s = wstate.cachorro; if (!weapons.cachorro || !s || !s.pets) return;
+  const pit = weapons.cachorro >= 6; // no nível 6 o caramelo vira Pit Bull
+  const C = pit ? { corpo: '#8a8f99', pata: '#6b7079', cabeca: '#9aa0aa', borda: '#3e424a', orelha: '#6b7079' }
+                : { corpo: '#c9873a', pata: '#a9682a', cabeca: '#d89a4e', borda: '#7a4a16', orelha: '#a9682a' };
   for (const p of s.pets) {
     ctx.fillStyle = 'rgba(0,0,0,.3)';
-    ctx.beginPath(); ctx.ellipse(p.x, p.y + 9, 12, 5, 0, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(p.x, p.y + 9, pit ? 16 : 12, pit ? 6.5 : 5, 0, 0, TAU); ctx.fill();
     ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.ang + Math.PI / 2);
-    ctx.lineWidth = 2; ctx.strokeStyle = '#7a4a16'; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(0, 13); ctx.quadraticCurveTo(Math.sin(p.wag) * 10, 20, Math.sin(p.wag) * 15, 26);
-    ctx.lineWidth = 4; ctx.strokeStyle = '#c9873a'; ctx.stroke();
-    ctx.fillStyle = '#a9682a';
+    if (pit) ctx.scale(1.25, 1.25);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath(); ctx.moveTo(0, 13); ctx.quadraticCurveTo(Math.sin(p.wag) * 10, 20, Math.sin(p.wag) * (pit ? 9 : 15), pit ? 22 : 26);
+    ctx.lineWidth = 4; ctx.strokeStyle = C.corpo; ctx.stroke(); // rabo
+    ctx.fillStyle = C.pata;
     for (const sd of [-1, 1]) { ctx.beginPath(); ctx.ellipse(sd * 9, 6, 3.5, 5, 0, 0, TAU); ctx.fill(); }
-    ctx.fillStyle = '#c9873a'; ctx.beginPath(); ctx.ellipse(0, 4, 10, 15, 0, 0, TAU); ctx.fill();
-    ctx.lineWidth = 2; ctx.strokeStyle = '#7a4a16'; ctx.stroke();
-    ctx.fillStyle = '#a9682a';
+    ctx.fillStyle = C.corpo; ctx.beginPath(); ctx.ellipse(0, 4, pit ? 12 : 10, 15, 0, 0, TAU); ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = C.borda; ctx.stroke();
+    if (pit) { ctx.fillStyle = '#ececec'; ctx.beginPath(); ctx.ellipse(0, 1, 5, 6, 0, 0, TAU); ctx.fill(); } // peito branco
+    ctx.fillStyle = C.orelha;
     for (const sd of [-1, 1]) {
-      ctx.beginPath(); ctx.ellipse(sd * 7, -16, 3.5, 6.5, sd * 0.5, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.beginPath();
+      if (pit) { ctx.moveTo(sd * 5, -19); ctx.lineTo(sd * 11, -23); ctx.lineTo(sd * 9.5, -15); ctx.closePath(); }
+      else ctx.ellipse(sd * 7, -16, 3.5, 6.5, sd * 0.5, 0, TAU);
+      ctx.fill(); ctx.stroke();
     }
-    ctx.fillStyle = '#d89a4e'; ctx.beginPath(); ctx.arc(0, -12, 8.5, 0, TAU); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#3a2410'; ctx.beginPath(); ctx.ellipse(0, -19, 3.6, 3, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = C.cabeca; ctx.beginPath();
+    if (pit) ctx.ellipse(0, -13, 10.5, 9, 0, 0, TAU); else ctx.arc(0, -12, 8.5, 0, TAU);
+    ctx.fill(); ctx.stroke();
+    if (pit) {
+      ctx.fillStyle = '#b8bdc6'; ctx.beginPath(); ctx.ellipse(0, -19, 6, 4, 0, 0, TAU); ctx.fill(); ctx.stroke(); // focinho largo
+      ctx.fillStyle = '#c0392b'; ctx.fillRect(-9, -5, 18, 3.5); ctx.strokeRect(-9, -5, 18, 3.5); // coleira
+      ctx.fillStyle = '#e8e8e8';
+      for (const sx of [-6, 0, 6]) { ctx.beginPath(); ctx.moveTo(sx - 1.8, -1.5); ctx.lineTo(sx, 2); ctx.lineTo(sx + 1.8, -1.5); ctx.closePath(); ctx.fill(); } // espinhos
+    }
+    ctx.fillStyle = '#3a2410'; ctx.beginPath(); ctx.ellipse(0, pit ? -21.5 : -19, 3.6, 3, 0, 0, TAU); ctx.fill();
     ctx.fillStyle = '#2a1a08';
     ctx.beginPath(); ctx.arc(-3.6, -14, 1.4, 0, TAU); ctx.arc(3.6, -14, 1.4, 0, TAU); ctx.fill();
+    if (pit) { // sobrancelhas bravas
+      ctx.strokeStyle = '#000'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(-6.5, -17.5); ctx.lineTo(-2, -15.8); ctx.moveTo(6.5, -17.5); ctx.lineTo(2, -15.8); ctx.stroke();
+    }
     ctx.restore();
   }
 }
