@@ -271,8 +271,8 @@ const TYPES = {
 TYPES.barata = { sole: '#6e3a18', strap: '#b07a44', hp: TYPES.chefe.hp * 40, speed: 80, dmg: 40, size: 4.5, xp: 300, boss: true, barata: true, bossName: '🪳 BARATA GIGANTE 🪳' };
 // chefe dos 20:00 com o dobro da vida da barata
 TYPES.gafanhoto = { sole: '#6cc03a', strap: '#c8e06a', hp: TYPES.barata.hp * 2, speed: 70, dmg: 45, size: 5, xp: 500, boss: true, gafa: true, bossName: '🦗 GAFANHOTO GIGANTE 🦗' };
-// Mãe Brava: 2000x a vida e 20x a velocidade do Chinelão de Ouro, chinelada de 100 (sem golpe especial)
-TYPES.mae = { sole: '#d23c77', strap: '#1f2f5c', hp: TYPES.chefe.hp * 2000, speed: TYPES.chefe.speed * 20, dmg: 100, size: 3.5, xp: 5000, boss: true, mae: true, bossName: '😡 MÃE BRAVA 😡' };
+// Mãe Brava: 1.500.000 de vida e 20x a velocidade do Chinelão de Ouro, chinelada de 100 (sem golpe especial)
+TYPES.mae = { sole: '#d23c77', strap: '#1f2f5c', hp: 1500000, speed: TYPES.chefe.speed * 20, dmg: 100, size: 3.5, xp: 5000, boss: true, mae: true, bossName: '😡 MÃE BRAVA 😡' };
 const SPR = {};
 for (const k in TYPES) if (!TYPES[k].barata && !TYPES[k].gafa && !TYPES[k].mae) SPR[k] = makeChinelo(TYPES[k].sole, TYPES[k].strap, 52 * TYPES[k].size);
 const GEM = [makeGem('#4fc3ff', 1), makeGem('#3ee07a', 1.2), makeGem('#ff4f6d', 1.5)];
