@@ -682,6 +682,20 @@ const WEAPONS = {
       }
     }
   },
+  // funciona como a Lança Temporal do Vampire Survivors (12 direções no sentido do relógio), mas dá dano e não paralisa
+  luva: {
+    name: 'Luva de Boxe', icon: '🥊', max: 7,
+    desc: ['Soca em 12 direções, uma de cada vez, como o ponteiro do relógio, atravessando todos os chinelos', 'Soca mais rápido', '+10 de dano', 'Soca mais rápido', '+10 de dano', 'Soca mais rápido', 'NÍVEL MÁXIMO: +15 de dano e soca muito mais rápido'],
+    dmg: [20, 20, 30, 30, 40, 40, 55], cd: [1.0, 0.85, 0.85, 0.7, 0.7, 0.55, 0.4],
+    update(s, i, dt) {
+      s.t -= dt; if (s.t > 0) return;
+      s.t = this.cd[i] * P.cd();
+      s.hora = (s.hora || 0) % 12; // 0 = meio-dia, depois 1 hora, 2 horas...
+      const a = -Math.PI / 2 + s.hora * TAU / 12; s.hora++;
+      projectiles.push({ kind: 'luva', color: '#e8413c', x: player.x, y: player.y, vx: Math.cos(a) * 700, vy: Math.sin(a) * 700, ang: a, r: 16 * P.area(), dmg: this.dmg[i], pierce: Infinity, life: 1, t: 0, hit: new Set() });
+      sfx('soco');
+    }
+  },
   // prêmio do nível 67 (só aparece nas cartas depois de ganhar): funciona como as pistolas duplas do Vampire Survivors
   pistola: {
     name: 'Pistola Dupla de Brinquedo', icon: '🔫', max: 11, special: true,
@@ -805,7 +819,7 @@ function noise(dur, vol, freq, type) {
   g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   s.connect(f); f.connect(g); g.connect(master); s.start(t); s.stop(t + dur);
 }
-const SFX_GAP = { sabre: 0.12, pew: 0.12, au: 0.3, vass: 0.35, agua: 0.3, exp: 0.08, plaft: 0.06, gem: 0.04, hurt: 0.1, zap: 0.1, shoot: 0.08, thunder: 0.15 };
+const SFX_GAP = { soco: 0.1, sabre: 0.12, pew: 0.12, au: 0.3, vass: 0.35, agua: 0.3, exp: 0.08, plaft: 0.06, gem: 0.04, hurt: 0.1, zap: 0.1, shoot: 0.08, thunder: 0.15 };
 function sfx(name) {
   if (muted || !AC) return;
   const now = AC.currentTime;
@@ -821,6 +835,7 @@ function sfx(name) {
     case 'pick': tone('sine', 600, 1200, 0.15, 0.1); break;
     case 'level': [523, 659, 784, 1046].forEach((f, i) => tone('square', f, f, 0.12, 0.05, i * 0.08)); break;
     case 'boss': tone('sawtooth', 110, 55, 0.9, 0.15); noise(0.6, 0.2, 200, 'lowpass'); break;
+    case 'soco': noise(0.1, 0.25, 1500, 'bandpass'); tone('square', 300, 120, 0.1, 0.05); break;
     case 'splat': noise(0.18, 0.28, 500, 'lowpass'); tone('sine', 180, 60, 0.18, 0.08); break;
     case 'sabreLiga': tone('sawtooth', 90, 160, 0.4, 0.07); break;
     case 'sabre': tone('sawtooth', 700, 250, 0.09, 0.03); break;
@@ -1273,7 +1288,8 @@ function updateProjectiles(dt) {
         p.hit.add(e.id);
       }
       const sp = Math.hypot(p.vx, p.vy) || 1;
-      hitEnemy(e, p.dmg, p.vx / sp * 90, p.vy / sp * 90);
+      const kb = p.kind === 'luva' ? 260 : 90; // a luva empurra mais forte
+      hitEnemy(e, p.dmg, p.vx / sp * kb, p.vy / sp * kb);
       if (p.kind !== 'boom') {
         p.pierce--; if (p.pierce < 0) p.dead = true;
         burst(p.x, p.y, p.kind === 'fogo' ? ['#ffb000', '#ff5a00'] : [p.color, '#fff'], 5, 100);
@@ -1996,6 +2012,17 @@ function render() {
       ctx.strokeStyle = '#d9c07a'; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(0, -10); ctx.quadraticCurveTo(7, -16, 2, -21); ctx.stroke();
       ctx.fillStyle = '#fff2a0'; ctx.beginPath(); ctx.arc(2, -21, rand(2, 4), 0, TAU); ctx.fill();
+      ctx.restore();
+    } else if (p.kind === 'luva') {
+      const sc = p.r / 16;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.ang); ctx.scale(sc, sc);
+      ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+      for (const yy of [-8, 0, 8]) { ctx.beginPath(); ctx.moveTo(-36, yy); ctx.lineTo(-19, yy); ctx.stroke(); } // rastro do soco
+      ctx.lineWidth = 2; ctx.strokeStyle = '#000'; ctx.lineJoin = 'round';
+      ctx.fillStyle = '#f3f3f3'; rrect(ctx, -17, -9, 8, 18, 3); ctx.fill(); ctx.stroke(); // punho branco
+      ctx.fillStyle = '#e8413c'; ctx.beginPath(); ctx.ellipse(2, 0, 13, 12, 0, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(-3, -11, 6, 4.5, 0.3, 0, TAU); ctx.fill(); ctx.stroke(); // dedão
+      ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.beginPath(); ctx.ellipse(6, -4, 5, 2.5, -0.3, 0, TAU); ctx.fill();
       ctx.restore();
     } else if (p.kind === 'bala') {
       ctx.fillStyle = p.color; ctx.globalAlpha = 0.35;
