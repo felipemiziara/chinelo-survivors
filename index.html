@@ -685,8 +685,8 @@ const WEAPONS = {
   // funciona como a Lança Temporal do Vampire Survivors (12 direções no sentido do relógio), mas dá dano e não paralisa
   luva: {
     name: 'Luva de Boxe', icon: '🥊', max: 7,
-    desc: ['Soca em 12 direções, uma de cada vez, como o ponteiro do relógio, atravessando todos os chinelos', 'Soca mais rápido', '+30 de dano', 'Soca mais rápido', '+30 de dano', 'Soca mais rápido', 'NÍVEL MÁXIMO: +45 de dano e soca muito mais rápido'],
-    dmg: [60, 60, 90, 90, 120, 120, 165], cd: [1.0, 0.85, 0.85, 0.7, 0.7, 0.55, 0.4],
+    desc: ['Soca em 12 direções, uma de cada vez, como o ponteiro do relógio, atravessando todos os chinelos', 'Soca mais rápido', '+300 de dano', 'Soca mais rápido', '+300 de dano', 'Soca mais rápido', 'NÍVEL MÁXIMO: +450 de dano e soca muito mais rápido'],
+    dmg: [600, 600, 900, 900, 1200, 1200, 1650], cd: [1.0, 0.85, 0.85, 0.7, 0.7, 0.55, 0.4],
     update(s, i, dt) {
       s.t -= dt; if (s.t > 0) return;
       s.t = this.cd[i] * P.cd();
