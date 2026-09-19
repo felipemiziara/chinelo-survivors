@@ -741,8 +741,6 @@ const WEAPONS = {
   },
 };
 
-// dano da Ampulheta do Tempo em cada nível (1 a 15); no 15 são 2 milhões
-const AMP_DANO = [0, 10000, 25000, 50000, 80000, 120000, 170000, 240000, 330000, 450000, 600000, 800000, 1050000, 1400000, 2000000];
 const PASSIVES = {
   forca:    { name: 'Músculo',     icon: '💪', max: 5, desc: '+12% de dano' },
   relogio:  { name: 'Relógio',     icon: '⏱️', max: 5, desc: '-8% no tempo de recarga das armas' },
@@ -752,11 +750,6 @@ const PASSIVES = {
   vitamina: { name: 'Vitamina',    icon: '🍊', max: 5, desc: 'Recupera +0,4 de vida por segundo' },
   coracao:  { name: 'Coração',     icon: '❤️', max: 5, desc: '+20 de vida máxima' },
   despertador: { name: 'Despertador Quebrado', icon: '⏰', max: 1, desc: 'Para o tempo por 1 minuto; depois espera 1 minuto e para de novo' },
-  // só aparece nas cartas com Nuvem de Talco nível 6 e Vitamina nível 5
-  ampulheta: { name: 'Ampulheta do Tempo', icon: '⏳', max: 15, req: true,
-    dano: AMP_DANO,
-    desc: AMP_DANO.map((d, i) => i === 0 ? 'Para o tempo por 20s e ativa de novo 1 minuto depois'
-      : (i === AMP_DANO.length - 1 ? 'NÍVEL MÁXIMO: ' : 'Ao parar o tempo: ') + d.toLocaleString('pt-BR') + ' de dano no inimigo com mais vida') },
   lupa:     { name: 'Lupa',        icon: '🔍', max: 5, desc: '+10% de área das armas' },
 };
 // ================= PERSONAGENS =================
@@ -866,10 +859,9 @@ const GAFA_TIME = 20 * 60;
 const MAE_TIME = 25 * 60;
 let state = 'menu';
 let testMode = false;
-let amp = { on: 0, cd: 0 }; // Ampulheta do Tempo
 let desp = { on: 0, cd: 0 }; // Despertador Quebrado
 let freezeAt = 0; // momento em que o tempo parou (para congelar as animações)
-const tempoParado = () => amp.on > 0 || desp.on > 0;
+const tempoParado = () => desp.on > 0;
 let player, enemies, projectiles, gems, pickups, particles, texts, effects;
 let time, kills, spawnTimer, nextBoss, nextHorde, bossCount, idc, won, weapons, passives, wstate, barata, victoryAt, gafa, gafaSpawned, victoryName, mae, maeSpawned;
 let shakeT = 0, shakeMag = 0, menuT = 0, menuCh = [];
@@ -881,7 +873,7 @@ function reset() {
   time = 0; kills = 0; spawnTimer = 0.5; nextBoss = 150; nextHorde = 60; bossCount = 0; idc = 0; won = false; barata = null; victoryAt = 0;
   gafa = null; gafaSpawned = false; victoryName = 'A BARATA GIGANTE';
   mae = null; maeSpawned = false;
-  amp = { on: 0, cd: 0 }; desp = { on: 0, cd: 0 };
+  desp = { on: 0, cd: 0 };
   weapons = {}; for (const k of charWeapons(CH())) weapons[k] = 1;
   passives = {}; wstate = {};
 }
@@ -1032,17 +1024,6 @@ function moveBarata(e, dt, dx, dy, d) {
     if (e.modeT <= 0) { e.mode = 'warn'; e.modeT = 0.8; sfx('warn'); }
   }
 }
-function updateAmpulheta(dt) {
-  const lv = passives.ampulheta || 0;
-  if (!lv) return;
-  if (amp.on > 0) {
-    amp.on -= dt;
-    if (amp.on <= 0) { amp.on = 0; amp.cd = 60; if (!tempoParado()) { sfx('tempoVolta'); banner('⏳ O tempo voltou a andar!'); } }
-  } else {
-    amp.cd -= dt;
-    if (amp.cd <= 0) ativarAmpulheta(lv);
-  }
-}
 function updateDespertador(dt) {
   if (!passives.despertador) return;
   if (desp.on > 0) {
@@ -1057,21 +1038,6 @@ function updateDespertador(dt) {
       banner('⏰ O TEMPO PAROU POR 1 MINUTO! ⏰');
     }
   }
-}
-function ativarAmpulheta(lv) {
-  if (!tempoParado()) freezeAt = time;
-  amp.on = 20;
-  sfx('tempoPara'); shake(0.3, 5);
-  banner('⏳ O TEMPO PAROU! ⏳');
-  const dano = PASSIVES.ampulheta.dano[lv - 1];
-  if (dano <= 0) return;
-  let alvo = null;
-  for (const e of enemies) if (!e.dead && (!alvo || e.hp > alvo.hp)) alvo = e;
-  if (!alvo) return;
-  effects.push({ kind: 'relogio', x: alvo.x, y: alvo.y, t: 0, R: alvo.r });
-  alvo.hp -= dano; alvo.flash = 0.3;
-  texts.push({ x: alvo.x, y: alvo.y - alvo.r - 20, txt: '-' + dano.toLocaleString('pt-BR'), color: '#ffd23d', size: 26, life: 1.6 });
-  if (alvo.hp <= 0) killEnemy(alvo);
 }
 function spawnMae() {
   const e = spawnEnemy('mae');
@@ -1344,7 +1310,7 @@ function updateEffects(dt) {
     }
     fx.t += dt;
   }
-  effects = effects.filter(fx => fx.t < (fx.kind === 'poca' ? fx.dur : fx.kind === 'raio' ? 0.35 : fx.kind === 'onda' ? 0.5 : fx.kind === 'exp' ? 0.3 : fx.kind === 'relogio' ? 0.9 : 0.28));
+  effects = effects.filter(fx => fx.t < (fx.kind === 'poca' ? fx.dur : fx.kind === 'raio' ? 0.35 : fx.kind === 'onda' ? 0.5 : fx.kind === 'exp' ? 0.3 : 0.28));
 }
 function updatePickups(dt) {
   const mr = P.magnet();
@@ -1384,7 +1350,6 @@ function update(dt) {
   director(dt);
   if (state !== 'play') return;
   buildGrid();
-  updateAmpulheta(dt);
   updateDespertador(dt);
   if (tempoParado()) { for (const e of enemies) e.flash -= dt; } // tempo parado: inimigos congelados
   else updateEnemies(dt);
@@ -1471,22 +1436,6 @@ function explodeBomb(p) {
     const dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy) || 1;
     if (d < p.blast + e.r) hitEnemy(e, p.dmg, dx / d * 260, dy / d * 260);
   });
-}
-function drawRelogio(fx) {
-  const q = fx.t / 0.9, R = fx.R + 30 + q * 60;
-  ctx.save(); ctx.globalAlpha = 1 - q; ctx.lineCap = 'round';
-  ctx.strokeStyle = '#ffd23d'; ctx.lineWidth = 8;
-  ctx.beginPath(); ctx.arc(fx.x, fx.y, R, 0, TAU); ctx.stroke();
-  ctx.strokeStyle = '#fff'; ctx.lineWidth = 3;
-  for (let k = 0; k < 12; k++) {
-    const a = k * TAU / 12;
-    ctx.beginPath(); ctx.moveTo(fx.x + Math.cos(a) * (R - 14), fx.y + Math.sin(a) * (R - 14));
-    ctx.lineTo(fx.x + Math.cos(a) * (R - 4), fx.y + Math.sin(a) * (R - 4)); ctx.stroke();
-  }
-  ctx.strokeStyle = '#ffd23d'; ctx.lineWidth = 6;
-  ctx.beginPath(); ctx.moveTo(fx.x, fx.y); ctx.lineTo(fx.x, fx.y - R * 0.7);
-  ctx.moveTo(fx.x, fx.y); ctx.lineTo(fx.x + R * 0.5, fx.y); ctx.stroke();
-  ctx.restore();
 }
 function drawExp(fx) {
   const q = fx.t / 0.3, r = fx.R * (0.4 + q * 0.7);
@@ -2154,7 +2103,6 @@ function render() {
     if (fx.kind === 'raquete') drawRaquete(fx);
     else if (fx.kind === 'onda') drawOnda(fx);
     else if (fx.kind === 'exp') drawExp(fx);
-    else if (fx.kind === 'relogio') drawRelogio(fx);
     else if (fx.kind === 'poca') { /* poça é desenhada no chão, em drawPocas */ }
     else drawRaio(fx);
   }
@@ -2191,8 +2139,7 @@ function openLevelUp() {
   state = 'levelup'; player.pending--; sfx('level');
   const wo = [], po = [];
   for (const k in WEAPONS) { if (WEAPONS[k].special && !weapons[k]) continue; const l = weapons[k] || 0; if (l < WEAPONS[k].max) wo.push({ kind: 'w', k, l, def: WEAPONS[k] }); }
-  const ampLiberada = (weapons.talco || 0) >= 6 && (passives.vitamina || 0) >= 5;
-  for (const k in PASSIVES) { if (PASSIVES[k].req && !ampLiberada) continue; const l = passives[k] || 0; if (l < PASSIVES[k].max) po.push({ kind: 'p', k, l, def: PASSIVES[k] }); }
+  for (const k in PASSIVES) { const l = passives[k] || 0; if (l < PASSIVES[k].max) po.push({ kind: 'p', k, l, def: PASSIVES[k] }); }
   shuffle(wo); shuffle(po);
   // normalmente 2 armas + 1 item, completando com o que sobrar
   let opts = [...wo.splice(0, 2), ...po.splice(0, 1)];
@@ -2229,12 +2176,9 @@ let hudCache = '';
 function updateHUD() {
   if (state === 'menu' || state === 'testsetup' || state === 'charmenu') return;
   const ah = $('amphud');
-  if (passives.ampulheta || passives.despertador) {
-    const partes = [];
-    if (passives.ampulheta) partes.push(amp.on > 0 ? '⏳ TEMPO PARADO: ' + Math.ceil(amp.on) + 's' : '⏳ Para o tempo em ' + Math.ceil(Math.max(0, amp.cd)) + 's');
-    if (passives.despertador) partes.push(desp.on > 0 ? '⏰ TEMPO PARADO: ' + Math.ceil(desp.on) + 's' : '⏰ Para o tempo em ' + Math.ceil(Math.max(0, desp.cd)) + 's');
+  if (passives.despertador) {
     ah.style.display = 'block';
-    ah.textContent = partes.join('   ');
+    ah.textContent = desp.on > 0 ? '⏰ TEMPO PARADO: ' + Math.ceil(desp.on) + 's' : '⏰ Para o tempo em ' + Math.ceil(Math.max(0, desp.cd)) + 's';
     ah.style.color = tempoParado() ? '#9fd0ff' : '#fff';
   } else if (ah.style.display !== 'none') ah.style.display = 'none';
   const bb = $('bossbar'), bs = activeBoss() || (mae && !mae.dead ? mae : null);
@@ -2325,7 +2269,7 @@ function applyTestCfg() {
   renderInv();
 }
 function tmRow(t, k, def, lv) {
-  const info = lv === 0 ? (def.req ? 'desligada (no jogo precisa Talco 6 e Vitamina 5)' : 'desligada') : Array.isArray(def.desc) ? def.desc[lv - 1] : def.desc;
+  const info = lv === 0 ? 'desligada' : Array.isArray(def.desc) ? def.desc[lv - 1] : def.desc;
   const lvTxt = lv === 0 ? '—' : lv === def.max ? `${lv} máx` : lv;
   return `<div class="tm-row${lv ? ' on' : ''}"><span class="tm-ic">${def.icon}</span>` +
     `<span class="tm-nm">${def.name}<small>${info}</small></span>` +
