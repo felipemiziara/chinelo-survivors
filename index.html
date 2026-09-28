@@ -817,7 +817,7 @@ function noise(dur, vol, freq, type) {
 // ================= MÚSICA DE FUNDO =================
 // toca em loop só durante a partida; em menus, cartas e pausa ela para
 const musica = new Audio('Siege_of_the_Hollow_Throne.mp3');
-musica.loop = true; musica.volume = 0.45; musica.preload = 'auto';
+musica.loop = true; musica.volume = 0.22; musica.preload = 'auto';
 function updateMusica() {
   if (state === 'play' && !muted) {
     if (musica.paused) musica.play().catch(() => {});
