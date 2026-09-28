@@ -814,6 +814,15 @@ function noise(dur, vol, freq, type) {
   g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   s.connect(f); f.connect(g); g.connect(master); s.start(t); s.stop(t + dur);
 }
+// ================= MÚSICA DE FUNDO =================
+// toca em loop só durante a partida; em menus, cartas e pausa ela para
+const musica = new Audio('Siege_of_the_Hollow_Throne.mp3');
+musica.loop = true; musica.volume = 0.45; musica.preload = 'auto';
+function updateMusica() {
+  if (state === 'play' && !muted) {
+    if (musica.paused) musica.play().catch(() => {});
+  } else if (!musica.paused) musica.pause();
+}
 const SFX_GAP = { rosnado: 0.3, soco: 0.1, sabre: 0.12, pew: 0.12, au: 0.3, vass: 0.35, agua: 0.3, exp: 0.08, plaft: 0.06, gem: 0.04, hurt: 0.1, zap: 0.1, shoot: 0.08, thunder: 0.15 };
 function sfx(name) {
   if (muted || !AC) return;
@@ -2206,6 +2215,7 @@ function startGame(test) {
   ['menu', 'over', 'paused', 'levelup', 'testmenu'].forEach(hide);
   $('hud').style.display = 'block';
   $('testbtn').style.display = testMode ? 'block' : 'none';
+  try { musica.currentTime = 0; } catch (e) {}
   if (testMode) {
     applyTestCfg();
     time = START_TIMES[testCfg.startIdx][0];
@@ -2404,7 +2414,7 @@ function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   if (state === 'play') update(dt);
   else if (state === 'menu' || state === 'testsetup' || state === 'charmenu') { updateMenu(dt); if (state === 'charmenu') drawCharPreviews(); }
-  render(); updateHUD();
+  render(); updateHUD(); updateMusica();
   requestAnimationFrame(frame);
 }
 initMenu(); showBest(); showCharNow();
