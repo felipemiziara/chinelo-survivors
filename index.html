@@ -103,7 +103,7 @@ h2{font-size:clamp(28px,5vw,48px);color:#ffd23d;text-shadow:3px 3px 0 #000;margi
 
 <div id="menu" class="screen show">
   <h1>CHINELO<br>SURVIVORS</h1>
-  <div class="sub">Os chinelos da casa criaram vida e querem te pegar!<br>Sobreviva 15 minutos e derrote a Barata Gigante.<br>Aos 20 minutos aparece o Gafanhoto Gigante... aos 25, a MÃE BRAVA e aos 30, o MOSQUITO!</div>
+  <div class="sub">Os chinelos da casa criaram vida e querem te pegar!<br>Sobreviva 15 minutos e derrote a Barata Gigante.<br>Aos 10 minutos vem o Mosquito Gigante, aos 20 o Gafanhoto Gigante... e aos 25, a MÃE BRAVA!</div>
   <div><button class="btn" id="btnPlay">▶ JOGAR</button><button class="btn" id="btnChar" style="background:#ff8c2e;box-shadow:0 6px 0 #a3520f">👤 PERSONAGEM</button><button class="btn alt" id="btnTest">🧪 MODO TESTE</button></div>
   <div id="charNow" class="sub" style="margin:8px 0 0;font-size:17px"></div>
   <div class="help">Mover: <b>WASD</b> ou <b>setas</b> — no celular, arraste o dedo<br>Suas armas atacam sozinhas • <b>P</b>/<b>Esc</b> pausa • <b>M</b> liga/desliga o som<br><span id="best"></span></div>
@@ -274,8 +274,8 @@ TYPES.barata = { sole: '#6e3a18', strap: '#b07a44', hp: TYPES.chefe.hp * 40, spe
 TYPES.gafanhoto = { sole: '#6cc03a', strap: '#c8e06a', hp: TYPES.barata.hp * 2, speed: 70, dmg: 45, size: 5, xp: 500, boss: true, gafa: true, bossName: '🦗 GAFANHOTO GIGANTE 🦗' };
 // Mãe Brava: 1.500.000 de vida e 20x a velocidade do Chinelão de Ouro, chinelada de 100 (sem golpe especial)
 TYPES.mae = { sole: '#d23c77', strap: '#1f2f5c', hp: 1500000, speed: TYPES.chefe.speed * 20, dmg: 100, size: 3.5, xp: 5000, boss: true, mae: true, bossName: '😡 MÃE BRAVA 😡' };
-// Mosquito Gigante: 5x a vida da Barata, voa torto e pica com a tromba
-TYPES.mosquito = { sole: '#6b5438', strap: '#d9c08a', hp: TYPES.barata.hp * 5, speed: 150, dmg: 25, size: 2.6, xp: 400, boss: true, mosca: true, bossName: '\u{1F99F} MOSQUITO GIGANTE \u{1F99F}' };
+// Mosquito Gigante: 5x a vida do Chinelão de Ouro, voa torto e pica com a tromba
+TYPES.mosquito = { sole: '#6b5438', strap: '#d9c08a', hp: TYPES.chefe.hp * 5, speed: 150, dmg: 25, size: 2.6, xp: 400, boss: true, mosca: true, bossName: '\u{1F99F} MOSQUITO GIGANTE \u{1F99F}' };
 const SPR = {};
 for (const k in TYPES) if (!TYPES[k].barata && !TYPES[k].gafa && !TYPES[k].mae && !TYPES[k].mosca) SPR[k] = makeChinelo(TYPES[k].sole, TYPES[k].strap, 52 * TYPES[k].size);
 const GEM = [makeGem('#4fc3ff', 1), makeGem('#3ee07a', 1.2), makeGem('#ff4f6d', 1.5)];
@@ -870,7 +870,7 @@ function sfx(name) {
 const WIN_TIME = 15 * 60;
 const GAFA_TIME = 20 * 60;
 const MAE_TIME = 25 * 60;
-const MOSCA_TIME = 30 * 60;
+const MOSCA_TIME = 10 * 60;
 let state = 'menu';
 let testMode = false;
 let desp = { on: 0, cd: 0 }; // Despertador Quebrado
@@ -1147,12 +1147,12 @@ function killEnemy(e) {
   e.dead = true; kills++;
   burst(e.x, e.y, [e.T.sole, e.T.strap, shade(e.T.sole, 0.4)], e.boss ? 70 : 12, e.boss ? 320 : 170);
   dropGem(e.x, e.y, e.xp);
-  if (e.T.barata || e.T.gafa || e.T.mae || e.T.mosca) {
-    victoryName = e.T.mosca ? 'O MOSQUITO GIGANTE' : e.T.mae ? 'A MÃE BRAVA' : e.T.gafa ? 'O GAFANHOTO GIGANTE' : 'A BARATA GIGANTE';
+  if (e.T.barata || e.T.gafa || e.T.mae) {
+    victoryName = e.T.mae ? 'A MÃE BRAVA' : e.T.gafa ? 'O GAFANHOTO GIGANTE' : 'A BARATA GIGANTE';
     for (const o of enemies) if (!o.dead && o !== e) { o.dead = true; kills++; burst(o.x, o.y, [o.T.sole, o.T.strap], 6); }
-    burst(e.x, e.y, e.T.mosca ? ['#6b5438', '#d9c08a', '#e8413c', '#ffcc00'] : e.T.mae ? ['#d23c77', '#1f2f5c', '#ffffff', '#ffcc00'] : e.T.gafa ? ['#6cc03a', '#25550f', '#c8e06a', '#ffcc00'] : ['#6e3a18', '#3e1f0b', '#b07a44', '#ffcc00'], 150, 450);
+    burst(e.x, e.y, e.T.mae ? ['#d23c77', '#1f2f5c', '#ffffff', '#ffcc00'] : e.T.gafa ? ['#6cc03a', '#25550f', '#c8e06a', '#ffcc00'] : ['#6e3a18', '#3e1f0b', '#b07a44', '#ffcc00'], 150, 450);
     shake(1, 12);
-    banner('🏆 ' + (e.T.mosca ? 'O MOSQUITO GIGANTE foi derrotado!' : e.T.mae ? 'A MÃE BRAVA foi derrotada!' : e.T.gafa ? 'O GAFANHOTO GIGANTE foi derrotado!' : 'A BARATA GIGANTE foi derrotada!') + ' 🏆');
+    banner('🏆 ' + (e.T.mae ? 'A MÃE BRAVA foi derrotada!' : e.T.gafa ? 'O GAFANHOTO GIGANTE foi derrotado!' : 'A BARATA GIGANTE foi derrotada!') + ' 🏆');
     victoryAt = time + 2.5;
   } else if (e.boss) {
     pickups.push({ x: e.x + 30, y: e.y, kind: 'bau', t: 0 });
@@ -2333,7 +2333,7 @@ $('btnContinue').addEventListener('click', () => { hide('over'); state = 'play';
 document.addEventListener('visibilitychange', () => { if (document.hidden) pauseGame(); });
 
 // ================= MODO TESTE =================
-const START_TIMES = [[0, '00:00'], [300, '05:00'], [600, '10:00'], [890, '14:50 (Barata chegando)'], [1190, '19:50 (Gafanhoto chegando)'], [1490, '24:50 (Mãe Brava chegando)'], [1790, '29:50 (Mosquito chegando)']];
+const START_TIMES = [[0, '00:00'], [300, '05:00'], [590, '09:50 (Mosquito chegando)'], [890, '14:50 (Barata chegando)'], [1190, '19:50 (Gafanhoto chegando)'], [1490, '24:50 (Mãe Brava chegando)']];
 const testCfg = { weapons: { raquete: 1 }, passives: {}, god: true, spawn: true, startIdx: 0 };
 let testCtx = 'menu'; // 'menu' = antes de começar, 'game' = aberto durante o teste
 
