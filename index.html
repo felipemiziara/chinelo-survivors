@@ -274,8 +274,8 @@ TYPES.barata = { sole: '#6e3a18', strap: '#b07a44', hp: TYPES.chefe.hp * 40, spe
 TYPES.gafanhoto = { sole: '#6cc03a', strap: '#c8e06a', hp: TYPES.barata.hp * 2, speed: 70, dmg: 45, size: 5, xp: 500, boss: true, gafa: true, bossName: '🦗 GAFANHOTO GIGANTE 🦗' };
 // Mãe Brava: 1.500.000 de vida e 20x a velocidade do Chinelão de Ouro, chinelada de 100 (sem golpe especial)
 TYPES.mae = { sole: '#d23c77', strap: '#1f2f5c', hp: 1500000, speed: TYPES.chefe.speed * 20, dmg: 100, size: 3.5, xp: 5000, boss: true, mae: true, bossName: '😡 MÃE BRAVA 😡' };
-// Mosquito Gigante: 5x a vida do Chinelão de Ouro, voa torto e pica com a tromba
-TYPES.mosquito = { sole: '#6b5438', strap: '#d9c08a', hp: TYPES.chefe.hp * 5, speed: 150, dmg: 25, size: 2.6, xp: 400, boss: true, mosca: true, bossName: '\u{1F99F} MOSQUITO GIGANTE \u{1F99F}' };
+// Mosquito Gigante: 10x a vida do Chinelão de Ouro, voa torto e pica com a tromba
+TYPES.mosquito = { sole: '#6b5438', strap: '#d9c08a', hp: TYPES.chefe.hp * 10, speed: 150, dmg: 25, size: 2.6, xp: 400, boss: true, mosca: true, bossName: '\u{1F99F} MOSQUITO GIGANTE \u{1F99F}' };
 const SPR = {};
 for (const k in TYPES) if (!TYPES[k].barata && !TYPES[k].gafa && !TYPES[k].mae && !TYPES[k].mosca) SPR[k] = makeChinelo(TYPES[k].sole, TYPES[k].strap, 52 * TYPES[k].size);
 const GEM = [makeGem('#4fc3ff', 1), makeGem('#3ee07a', 1.2), makeGem('#ff4f6d', 1.5)];
